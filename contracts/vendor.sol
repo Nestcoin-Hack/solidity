@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "./TangetToken.sol";
+import "./NFTGen.sol";
 
 // Learn more about the ERC20 implementation 
 // on OpenZeppelin docs: https://docs.openzeppelin.com/contracts/4.x/api/access#Ownable
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Vendor is Ownable {
+contract Vendor is Ownable, MyEpicNFT {
 
   // Our Token Contract
   TangetToken tangetToken;
@@ -80,4 +81,15 @@ contract Vendor is Ownable {
     (bool sent,) = msg.sender.call{value: address(this).balance}("");
     require(sent, "Failed to send user balance back to the owner");
   }
+
+    /// @notice This function mints nft to the msg.sender and transfers eth to the vendor address
+    /// @param _productPrice cost of the product in ethers
+    /// @param _vendorWallet wallet address of the vendor
+    function purchaseSubscription(uint _productPrice, address payable _vendorWallet) payable public {
+        _productPrice = _productPrice * 10 ** 18;
+        require(msg.value == _productPrice,"Amount not enough"); 
+        _vendorWallet.transfer(msg.value);
+        makeAnEpicNFT();
+    }
+
 }
