@@ -22,7 +22,6 @@ contract Vendor is Ownable, MyEpicNFT {
     }
 
   address[] public vendorList;
-  address public _owner;
 
   /// @notice mapping an address to the vendor structs, used to add vendors
     mapping(address => vendor) public vendors;
@@ -45,13 +44,8 @@ contract Vendor is Ownable, MyEpicNFT {
 
   constructor(address tokenAddress) {
     tangetToken = TangetToken(tokenAddress);
-    _owner = msg.sender;
   }
 
-  modifier onlyOwner() {
-        require(msg.sender == _owner, "You're not authorised to perform this function");
-        _;
-    }
 
   /**
   * @notice Allow users to buy tokens for ETH
@@ -126,13 +120,13 @@ contract Vendor is Ownable, MyEpicNFT {
    /// @param _product represents the product the vendor will be offering to customers
    /// @param _price represents the price of the product the vendor will be offering to customers
    /// @param _description provides details on the vendor and the type of product they will be offering
-   /// @param _address represents the wallet address of the vendor
+   /// @param _customer represents the wallet address of the vendor
 
     function addVendors (uint _id, string memory _BusinessName,string memory _product, string memory _price, string memory _description, address _customer) public onlyOwner {
         require(vendorExists[_customer] == false, "This address is already a vendor");
         vendorsCount ++;
 
-        vendor memory customerDetails = vendor(vendorsCount ,_id,_BusinessName,_product,_price,_description,_customer); 
+        vendor memory customerDetails = vendor(_id,_BusinessName,_product,_price,_description,_customer); 
         vendors[_customer] = customerDetails;
         vendorExists[_customer] = true;
         vendorList.push(_customer);
