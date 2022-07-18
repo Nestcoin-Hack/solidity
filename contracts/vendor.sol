@@ -11,6 +11,27 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Vendor is Ownable, MyEpicNFT {
 
+// Model a vendor
+  struct vendor {
+        uint id;
+        string BusinessName;
+        string product;
+        string price;
+        string description;
+        address customer;
+    }
+
+  address[] public vendorList;
+
+  /// @notice mapping an address to the vendor structs, used to add vendors
+    mapping(address => vendor) public vendors;
+
+  //store vendors count
+    uint public vendorsCount;
+
+    //checking if a vendor already exists
+    mapping (address => bool) public vendorExists;
+
   // Our Token Contract
   TangetToken tangetToken;
 
@@ -24,6 +45,7 @@ contract Vendor is Ownable, MyEpicNFT {
   constructor(address tokenAddress) {
     tangetToken = TangetToken(tokenAddress);
   }
+
 
   /**
   * @notice Allow users to buy tokens for ETH
@@ -90,6 +112,32 @@ contract Vendor is Ownable, MyEpicNFT {
         require(msg.value == _productPrice,"Amount not enough"); 
         _vendorWallet.transfer(msg.value);
         makeAnEpicNFT();
+    }
+
+   /// @notice Add vendors with their id, Business name, product, price, description and address.
+   /// @param  _id is the registration ID of the vendor to add to vendors
+   /// @param  _BusinessName is the business name of the vendor to add to vendors 
+   /// @param _product represents the product the vendor will be offering to customers
+   /// @param _price represents the price of the product the vendor will be offering to customers
+   /// @param _description provides details on the vendor and the type of product they will be offering
+   /// @param _customer represents the wallet address of the vendor
+
+    function addVendors (uint _id, string memory _BusinessName,string memory _product, string memory _price, string memory _description, address _customer) public onlyOwner {
+        require(vendorExists[_customer] == false, "This address is already a vendor");
+        vendorsCount ++;
+
+        vendor memory customerDetails = vendor(_id,_BusinessName,_product,_price,_description,_customer); 
+        vendors[_customer] = customerDetails;
+        vendorExists[_customer] = true;
+        vendorList.push(_customer);
+    }
+
+     // function to get the details of the signer 
+    function getvendorDetails() public view returns ( uint id, string memory BusinessName, string memory product, string memory price, string memory description, address customer){
+        require(vendorExists[msg.sender] == true, "Not a vendor");
+        vendor memory p = vendors[msg.sender];
+        return (p.id, p.BusinessName, p.product, p.price, p.description, p.customer); 
+
     }
 
 }
