@@ -3,13 +3,20 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./NftGen.sol";
 
-
+interface INftGen {
+  function makeAnEpicNFT() external;
+}
 
 contract Vendor is ERC20 {
   address public owner;
+  address NftGenAddr;
 
+  function setNftGenAddr(address _NftGen) public {
+    NftGenAddr = _NftGen;
+  }
+
+  
 // Model a vendor
   struct vendor {
         uint id;
@@ -112,7 +119,7 @@ contract Vendor is ERC20 {
         _productPrice = _productPrice * 10 ** 18;
         require(msg.value == _productPrice,"Amount not enough"); 
         _vendorWallet.transfer(msg.value);
-        
+        INftGen(NftGenAddr).makeAnEpicNFT();
     }
 
    /// @notice Add vendors with their id, Business name, product, price, description and address.
