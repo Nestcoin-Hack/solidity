@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./NFTGen.sol";
+import "./NftGen.sol";
 
 
 
@@ -47,7 +47,7 @@ contract Vendor is ERC20 {
   /**
   * @notice Allow users to buy tokens for ETH
   */
-  function buyTokens() public payable returns (uint256 tokenAmount) {
+  function buyTokens(uint256 tokenAmount) public payable {
     require(msg.value > 0, "Send ETH to buy some tokens");
 
     uint256 amountToBuy = msg.value * tokensPerEth;
@@ -63,7 +63,6 @@ contract Vendor is ERC20 {
     // emit the event
     emit BuyTokens(msg.sender, msg.value, amountToBuy);
 
-    return amountToBuy;
   }
 
   modifier onlyOwner() {
