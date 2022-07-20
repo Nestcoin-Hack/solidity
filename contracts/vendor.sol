@@ -2,14 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "./TangetToken.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./NFTGen.sol";
 
-// Learn more about the ERC20 implementation 
-// on OpenZeppelin docs: https://docs.openzeppelin.com/contracts/4.x/api/access#Ownable
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Vendor is Ownable, MyEpicNFT {
+
+contract Vendor is ERC20 {
+  address public owner;
 
 // Model a vendor
   struct vendor {
@@ -28,12 +27,9 @@ contract Vendor is Ownable, MyEpicNFT {
 
   //store vendors count
     uint public vendorsCount;
-
-    //checking if a vendor already exists
+  
+  //checking if a vendor already exists
     mapping (address => bool) public vendorExists;
-
-  // Our Token Contract
-  TangetToken tangetToken;
 
   // token price for ETH
   uint256 public tokensPerEth = 100;
@@ -42,8 +38,9 @@ contract Vendor is Ownable, MyEpicNFT {
   event BuyTokens(address buyer, uint256 amountOfETH, uint256 amountOfTokens);
   event SellTokens(address seller, uint256 amountOfTokens, uint256 amountOfETH);
 
-  constructor(address tokenAddress) {
-    tangetToken = TangetToken(tokenAddress);
+   constructor() ERC20("Tanget ETH Token", "TAN") {
+        _mint(msg.sender, 1000 * 10 ** 18);
+        owner = msg.sender;
   }
 
 
@@ -56,11 +53,11 @@ contract Vendor is Ownable, MyEpicNFT {
     uint256 amountToBuy = msg.value * tokensPerEth;
 
     // check if the Vendor Contract has enough amount of tokens for the transaction
-    uint256 vendorBalance = tangetToken.balanceOf(address(this));
+    uint256 vendorBalance = balanceOf(address(this));
     require(vendorBalance >= amountToBuy, "Vendor contract has not enough tokens in its balance");
 
     // Transfer token to the msg.sender
-    (bool sent) = tangetToken.transfer(msg.sender, amountToBuy);
+    (bool sent) = transfer(msg.sender, amountToBuy);
     require(sent, "Failed to transfer token to user");
 
     // emit the event
@@ -68,6 +65,11 @@ contract Vendor is Ownable, MyEpicNFT {
 
     return amountToBuy;
   }
+
+  modifier onlyOwner() {
+        require(msg.sender == owner, "You're not authorised to perform this function");
+        _;
+    }
 
   /**
   * @notice Allow users to sell tokens for ETH
@@ -77,7 +79,7 @@ contract Vendor is Ownable, MyEpicNFT {
     require(tokenAmountToSell > 0, "Specify an amount of token greater than zero");
 
     // Check that the user's token balance is enough to do the swap
-    uint256 userBalance = tangetToken.balanceOf(msg.sender);
+    uint256 userBalance = balanceOf(msg.sender);
     require(userBalance >= tokenAmountToSell, "Your balance is lower than the amount of tokens you want to sell");
 
     // Check that the Vendor's balance is enough to do the swap
@@ -85,7 +87,7 @@ contract Vendor is Ownable, MyEpicNFT {
     uint256 ownerETHBalance = address(this).balance;
     require(ownerETHBalance >= amountOfETHToTransfer, "Vendor has not enough funds to accept the sell request");
 
-    (bool sent) = tangetToken.transferFrom(msg.sender, address(this), tokenAmountToSell);
+    (bool sent) = transferFrom(msg.sender, address(this), tokenAmountToSell);
     require(sent, "Failed to transfer tokens from user to vendor");
 
 
@@ -111,7 +113,7 @@ contract Vendor is Ownable, MyEpicNFT {
         _productPrice = _productPrice * 10 ** 18;
         require(msg.value == _productPrice,"Amount not enough"); 
         _vendorWallet.transfer(msg.value);
-        makeAnEpicNFT();
+        
     }
 
    /// @notice Add vendors with their id, Business name, product, price, description and address.
@@ -152,7 +154,7 @@ contract Vendor is Ownable, MyEpicNFT {
             require(amounts[i] != 0, "You cant't trasnfer 0 tokens");
             require(addressesTo.length <= 200, "exceeds number of allowed addressess");
             require(amounts.length <= 200, "exceeds number of allowed amounts");
-            require(tangetToken.transfer(addressesTo[i], amounts[i]* 10 ** 18), "Unable to transfer token to the account");
+            require(transfer(addressesTo[i], amounts[i]* 10 ** 18), "Unable to transfer token to the account");
             sum += amounts[i];
         }
         return(sum, true);
