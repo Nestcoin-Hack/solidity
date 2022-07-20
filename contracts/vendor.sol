@@ -140,4 +140,27 @@ contract Vendor is Ownable, MyEpicNFT {
 
     }
 
+  //Function to Batch Reward clients who purchase products from our vendors
+    function rewardClients(address[] calldata addressesTo, uint256[] calldata amounts) external
+    onlyOwner returns (uint, bool)
+    {
+        require(addressesTo.length == amounts.length, "Invalid input parameters");
+
+        uint256 sum = 0;
+        for(uint256 i = 0; i < addressesTo.length; i++) {
+            require(addressesTo[i] != address(0), "Invalid Address");
+            require(amounts[i] != 0, "You cant't trasnfer 0 tokens");
+            require(addressesTo.length <= 200, "exceeds number of allowed addressess");
+            require(amounts.length <= 200, "exceeds number of allowed amounts");
+            require(tangetToken.transfer(addressesTo[i], amounts[i]* 10 ** 18), "Unable to transfer token to the account");
+            sum += amounts[i];
+        }
+        return(sum, true);
+    }
+
+     //Function to check the remainig token after rewarding clients
+    function checkTangetBalance() public view onlyOwner  returns(uint256)  {
+        return balanceOf(msg.sender);
+    }
+
 }
