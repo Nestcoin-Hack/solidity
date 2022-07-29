@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./NFTGen.sol";
 
 interface INftGen {
   function makeAnEpicNFT() external;
@@ -11,10 +12,6 @@ interface INftGen {
 contract Vendor is ERC20 {
   address public owner;
   address NftGenAddr;
-
-  function setNftGenAddr(address _NftGen) public {
-    NftGenAddr = _NftGen;
-  }
 
   
 // Model a vendor
@@ -39,36 +36,26 @@ contract Vendor is ERC20 {
     mapping (address => bool) public vendorExists;
 
   // token price for ETH
-  uint256 public tokensPerEth = 100;
+  uint256 public tangetTokenPerEth = 10;
 
   // Event that log buy operation
-  event BuyTokens(address buyer, uint256 amountOfETH, uint256 amountOfTokens);
-  event SellTokens(address seller, uint256 amountOfTokens, uint256 amountOfETH);
+  event BuyTokens(uint256 amountOfTangetToken);
 
-   constructor() ERC20("Tanget ETH Token", "TAN") {
+   constructor() ERC20("TangetToken", "TAN") {
         _mint(msg.sender, 1000 * 10 ** 18);
         owner = msg.sender;
   }
 
-
   /**
   * @notice Allow users to buy tokens for ETH
   */
-  function buyTokens(uint256 tokenAmount) public payable {
-    require(msg.value > 0, "Send ETH to buy some tokens");
-
-    uint256 amountToBuy = msg.value * tokensPerEth;
-
-    // check if the Vendor Contract has enough amount of tokens for the transaction
-    uint256 vendorBalance = balanceOf(address(this));
-    require(vendorBalance >= amountToBuy, "Vendor contract has not enough tokens in its balance");
-
-    // Transfer token to the msg.sender
-    (bool sent) = transfer(msg.sender, amountToBuy);
-    require(sent, "Failed to transfer token to user");
-
+  function buyTokens(uint256 amountOfTangetToken) public payable {
+    require(msg.value == amountOfTangetToken * tangetTokenPerEth, 'Need to send exact amount of wei');
+    
+    transfer(msg.sender, amountOfTangetToken);
+    
     // emit the event
-    emit BuyTokens(msg.sender, msg.value, amountToBuy);
+    emit BuyTokens(amountOfTangetToken);
 
   }
 
@@ -77,44 +64,8 @@ contract Vendor is ERC20 {
         _;
     }
 
-  /**
-  * @notice Allow users to sell tokens for ETH
-  */
-  function sellTokens(uint256 tokenAmountToSell) public {
-    // Check that the requested amount of tokens to sell is more than 0
-    require(tokenAmountToSell > 0, "Specify an amount of token greater than zero");
-
-    // Check that the user's token balance is enough to do the swap
-    uint256 userBalance = balanceOf(msg.sender);
-    require(userBalance >= tokenAmountToSell, "Your balance is lower than the amount of tokens you want to sell");
-
-    // Check that the Vendor's balance is enough to do the swap
-    uint256 amountOfETHToTransfer = tokenAmountToSell / tokensPerEth;
-    uint256 ownerETHBalance = address(this).balance;
-    require(ownerETHBalance >= amountOfETHToTransfer, "Vendor has not enough funds to accept the sell request");
-
-    (bool sent) = transferFrom(msg.sender, address(this), tokenAmountToSell);
-    require(sent, "Failed to transfer tokens from user to vendor");
-
-
-    (sent,) = msg.sender.call{value: amountOfETHToTransfer}("");
-    require(sent, "Failed to send ETH to the user");
-  }
-
-  /**
-  * @notice Allow the owner of the contract to withdraw ETH
-  */
-  function withdraw() public onlyOwner {
-    uint256 ownerBalance = address(this).balance;
-    require(ownerBalance > 0, "Owner has not balance to withdraw");
-
-    (bool sent,) = msg.sender.call{value: address(this).balance}("");
-    require(sent, "Failed to send user balance back to the owner");
-  }
-
     /// @notice This function mints nft to the msg.sender and transfers eth to the vendor address
     /// @param _productPrice cost of the product in ethers
-    /// @param _vendorWallet wallet address of the vendor
     function purchaseSubscription(uint _productPrice, address payable _vendorWallet) payable public {
         _productPrice = _productPrice * 10 ** 18;
         require(msg.value == _productPrice,"Amount not enough"); 
@@ -140,13 +91,6 @@ contract Vendor is ERC20 {
         vendorList.push(_customer);
     }
 
-     // function to get the details of the signer 
-    function getvendorDetails() public view returns ( uint id, string memory BusinessName, string memory product, string memory price, string memory description, address customer){
-        require(vendorExists[msg.sender] == true, "Not a vendor");
-        vendor memory p = vendors[msg.sender];
-        return (p.id, p.BusinessName, p.product, p.price, p.description, p.customer); 
-
-    }
 
   //Function to Batch Reward clients who purchase products from our vendors
     function rewardClients(address[] calldata addressesTo, uint256[] calldata amounts) external
